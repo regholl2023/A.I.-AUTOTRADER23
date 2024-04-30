@@ -348,8 +348,6 @@ class AlpacaAPI:
         
         buy_filtered_df = df_tickers[buy_criteria]
 
-        self.buy_tickers = buy_filtered_df['Symbol'].tolist()
-        
         # Filter and return the tickers based on the buy criteria
         return buy_filtered_df
 
