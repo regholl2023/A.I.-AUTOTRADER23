@@ -3,9 +3,12 @@ from alpaca_only_api.alpaca import *
 def main():
     # Set the Alpaca API key and secret key
     alpaca = AlpacaAPI()
-    # Get the market losers
-    print(alpaca.get_ticker_info(sym="AAPL"))
+    # Check for sell orders based on sell criteria
+    alpaca.sell_orders_from_sell_criteria()
+    # Check account for capital and liquidate positions if needed
+    alpaca.liquidate_positions_for_capital()
+    # Check for buy orders based on buy criteria
+    alpaca.buy_orders()
     
-
 if __name__ == "__main__":
     main()
