@@ -1,21 +1,24 @@
 import os
-from tqdm import tqdm
+import time
+import json
+import http.client, urllib.parse
 import pandas as pd
+from tqdm import tqdm
+
 from datetime import datetime
+from requests_html import HTMLSession
 
 from alpaca.data import StockHistoricalDataClient
 from alpaca.trading.client import TradingClient
-from alpaca.data.historical.screener import ScreenerClient
 from alpaca.data.timeframe import TimeFrame
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
-from alpaca.data.enums import MarketType
-from alpaca.data.requests import MarketMoversRequest, StockBarsRequest
+from alpaca.data.requests import StockBarsRequest
 
 from ta.volatility import BollingerBands
 from ta.momentum import RSIIndicator
 
-from tabulate import tabulate
+from openai import OpenAI
 
 # Load environment variables
 if not os.getenv("PRODUCTION"):
@@ -24,17 +27,230 @@ if not os.getenv("PRODUCTION"):
     alpaca_key_id = config['ALPACA_KEY_ID']
     alpaca_secret_key = config['ALPACA_SECRET_KEY']
     alpaca_paper = config['ALPACA_PAPER']
+    article_key = config['MARKETAUX_API_KEY']
+    extract_key = config['ARTICLEEXTRACT_API_KEY']
+    openai_key = config['OPENAI_API_KEY']
 else:
     alpaca_key_id = os.getenv('ALPACA_KEY_ID')
     alpaca_secret_key = os.getenv('ALPACA_SECRET_KEY')
     alpaca_paper = os.getenv('ALPACA_PAPER')
+    article_key = os.getenv('MARKETAUX_API_KEY')
+    extract_key = os.getenv('ARTICLEEXTRACT_API_KEY')
+    openai_key = os.getenv('OPENAI_API_KEY')
 
 # Define the AlpacaAPI class
 class AlpacaAPI:
+    """
+    Alpaca API class to interact with Alpaca API
+    """
     def __init__(self):
         # Set the Alpaca API key and secret key
         self.alpaca_key_id = alpaca_key_id
         self.alpaca_secret_key = alpaca_secret_key
+
+    ########################################################
+    # Define the get_buy_opportunities function
+    ########################################################
+    def get_buy_opportunities(self):
+        """
+        Get the buy opportunities based on the market losers
+        The strategy is to buy the stocks that are losers that are oversold based on RSI and Bollinger Bands
+        and have a bullish sentiment based on news articles and OpenAI sentiment analysis
+        return: DataFrame of buy opportunities
+        """
+        # Get the market losers
+        market_losers = self.get_ticker_info()
+
+        # Filter the losers based on indicators
+        buy_criteria = ((market_losers[['rsi14', 'rsi30', 'rsi50', 'rsi200']] <= 30).any(axis=1)) | \
+                          ((market_losers[['bblo14', 'bblo30', 'bblo50', 'bblo200']] == 1).any(axis=1))
+        
+        buy_filtered_df = market_losers[buy_criteria]
+        filtered_list = buy_filtered_df['Symbol'].tolist()
+
+        news_filtered_list = []
+        # Filter the losers based on news sentiment from MarketAux API and OpenAI sentiment analysis
+        for symbol in filtered_list:
+            if self.get_asset_news_articles_sentiment(symbol):
+                news_filtered_list.append(symbol)
+        
+        # Return the filtered DataFrame
+        return buy_filtered_df[buy_filtered_df['Symbol'].isin(news_filtered_list)]
+
+    ########################################################
+    # Define the chat function
+    ########################################################
+    def chat(self, msgs):
+        """
+        Chat with the OpenAI API
+        :param msgs: List of messages
+        return: OpenAI response
+        """
+        openai = OpenAI(api_key=openai_key)
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=msgs
+        )
+        message = response
+        return message
+    
+    ########################################################
+    # Define the get_sentiment function
+    ########################################################
+    def get_sentiment(self, article):
+        """
+        Get the sentiment of the article using OpenAI API sentiment analysis
+        :param article: Article
+        return: Sentiment of the article
+        """
+        message_history = []
+        sentiments = []
+        # Send the system message to the OpenAI API
+        system_message = 'You will work as a Sentiment Analysis for Financial news. I will share news headline and article. You will only answer as:\n\n BEARISH,BULLISH,NEUTRAL. No further explanation. \n Got it?'
+        message_history.append({'content': system_message, 'role': 'user'})
+        response = self.chat(message_history)
+
+        # Send the article to the OpenAI API
+        article = article
+        user_message = '{}\n{}'.format(article['title'], article['article'])
+        
+        message_history.append({'content': user_message, 'role': 'user'})
+        response = self.chat(message_history)
+        sentiments.append(
+            {'title': article['title'], 'article': article['article'], 'signal': response.choices[0].message.content})
+        message_history.pop()
+        # Return the sentiment
+        return sentiments[0]['signal']
+    
+    ########################################################
+    # Define the get_asset_news_articles_sentiment function
+    ########################################################
+    def get_asset_news_articles_sentiment(self, symbol):
+        """
+        Get the sentiment of the news articles for the given symbol using MarketAux API and OpenAI sentiment analysis
+        :param symbol: Stock symbol
+        return: True if the sentiment is bullish
+        return: False if the sentiment is bearish
+        """
+        # Get the news articles for the given symbol
+        conn = http.client.HTTPSConnection("api.marketaux.com")
+        params = urllib.parse.urlencode({
+            'api_token': article_key,
+            'symbols': symbol,
+            'limit': 3,
+            })
+        
+        conn.request('GET', '/v1/news/all?{}'.format(params))
+
+        res = conn.getresponse()
+        data = json.loads(res.read())
+        data = pd.json_normalize(data['data'])
+
+        bulls = 0
+        bears = 0
+        
+        # If there are no news articles, return False
+        if data.empty:
+            return False
+        else:
+            time.sleep(1)
+            # Iterate through the news articles and get the sentiment
+            for url in data['url']:
+                if url == None or url == '':
+                    continue    
+                # Get the article extracted from the URL
+                extracted_article = self.get_article_extract(url)
+                # Get the sentiment of the article
+                sentiment = self.get_sentiment(extracted_article)
+                # Increment the bulls and bears based on the sentiment
+                if sentiment == 'BULLISH' or sentiment == 'NEUTRAL':
+                    bulls += 1
+                elif sentiment == 'BEARISH':
+                    bears += 1
+            # Return True if the sentiment is bullish
+            if bulls > bears:
+                return True
+            # Return False if the sentiment is bearish
+        return False
+
+    ########################################################
+    # Define the get_article_extract function
+    ########################################################
+    def get_article_extract(self, url):
+        """
+        Get the article extracted from the URL using ArticleXtractor API
+        :param url: URL
+        return: Extracted article
+        """
+        conn = http.client.HTTPSConnection('api.articlextractor.com')
+
+        params = urllib.parse.urlencode({
+            'api_token': extract_key,
+            'url': "{article}".format(article=url),
+            })
+
+        conn.request('GET', '/v1/extract?{}'.format(params))
+
+        res = conn.getresponse()
+        data = json.loads(res.read())
+        # Return the extracted article title and text
+        return {'title': data['data']['title'], 'article': data['data']['text']}
+    
+    ########################################################
+    # Define the raw_get_daily_info function
+    ########################################################
+    def raw_get_daily_info(self, site):
+        """
+        Get the daily information from a given site
+        :param site: Site URL
+        Use the requests_html library to get the tables from the site
+        return: DataFrame of daily information
+        """
+        # Create a HTMLSession object
+        session = HTMLSession()
+        response = session.get(site)
+        # Get the tables from the site
+        tables = pd.read_html(response.html.raw_html)
+        df = tables[0].copy()
+        df.columns = tables[0].columns
+        # Close the session
+        session.close()
+        return df
+
+    ########################################################
+    # Define the get_market_losers function
+    ########################################################
+    def get_market_losers(self):
+        """
+        Get the market losers from Yahoo Finance
+        The function returns the top 100 market losers
+        return: List of market losers
+        """
+        df_stock = self.raw_get_daily_info('https://finance.yahoo.com/losers?offset=0&count=100')
+        df_stock["asset_type"] = "stock"
+        df_stock = df_stock.head(100)
+
+        df_opportunities = pd.concat([df_stock], axis=0).reset_index(drop=True)
+        raw_symbols = list(df_opportunities['Symbol'])
+
+        client = TradingClient(api_key=self.alpaca_key_id, secret_key=self.alpaca_secret_key)
+
+        clean_symbols = []
+        # Check if the stock is fractionable
+        for symbol in raw_symbols:
+            try:
+                if '-' in symbol:
+                    continue
+                asset = client.get_asset(symbol)
+                if asset.fractionable == True:
+                    clean_symbols.append(symbol)
+                else:
+                    continue
+            except Exception as e:
+                print(e)
+                continue
+        # Return the clean symbols list of market losers that are fractionable
+        return clean_symbols
 
     ########################################################
     # Define the liquidate_positions_for_capital function
@@ -164,7 +380,7 @@ class AlpacaAPI:
             return False
         
         # Get the tickers from the get_ticker_info function and convert symbols to a list
-        tickers = self.get_ticker_info()['Symbol'].tolist()
+        tickers = self.get_buy_opportunities()['Symbol'].tolist()
 
         # Get the current positions and available cash
         df_current_positions = self.get_current_positions()
@@ -338,18 +554,8 @@ class AlpacaAPI:
         df_tickers = [x for x in df_tickers if not x.empty]
         df_tickers = pd.concat(df_tickers)
 
-        # Return the ticker if sym is not None
-        if sym is not None:
-            return df_tickers
 
-        # Filter the losers based on indicators
-        buy_criteria = ((df_tickers[['rsi14', 'rsi30', 'rsi50', 'rsi200']] <= 30).any(axis=1)) | \
-                          ((df_tickers[['bblo14', 'bblo30', 'bblo50', 'bblo200']] == 1).any(axis=1))
-        
-        buy_filtered_df = df_tickers[buy_criteria]
-
-        # Filter and return the tickers based on the buy criteria
-        return buy_filtered_df
+        return df_tickers
 
     ########################################################
     # Define the get_stock_data function
@@ -379,14 +585,20 @@ class AlpacaAPI:
         # Rename the columns
         bar_df.rename(columns={'symbol': 'Symbol', 'timestamp': 'Date', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'}, inplace=True)
         # Drop the uneeded columns
-        bar_df.drop(columns=['Volume', 'trade_count', 'vwap'], inplace=True)
+        try:
+            bar_df.drop(columns=['Volume', 'trade_count', 'vwap'], inplace=True)
+        except:
+            pass
+        # Return the DataFrame
         return bar_df
     
     ########################################################
-    # Define the get_market_losers function
+    # Define the get_market_losers function OLD VERSION
     ########################################################
-    def get_market_losers(self):
+    #def get_market_losers(self):
         """
+        ALPACA SCREENER API IS NOT WORKING WELL FOR THIS STRATEGY
+        NO WAY TO FILTER RETURNS BY MARKET CAP
         Get the market losers from Alpaca API ScreenerClient
         The function returns the top 50 market losers
         Which can be used to filter the stocks based on the losers
@@ -394,19 +606,19 @@ class AlpacaAPI:
         return: List of market losers
         """
         # Create a TradingClient object
-        client = ScreenerClient(api_key=self.alpaca_key_id, secret_key=self.alpaca_secret_key)
-        # Get the losers
-        params = MarketMoversRequest(
-            top=50,
-            market_type=MarketType.STOCKS,
-        )
-        losers = client.get_market_movers(params)
-        losers_list = []
-        # Iterate through the losers and append the symbol to the list
-        for sym in losers.losers:
-            losers_list.append(sym.symbol)
-        # Return list of losers
-        return losers_list
+        # client = ScreenerClient(api_key=self.alpaca_key_id, secret_key=self.alpaca_secret_key)
+        # # Get the losers
+        # params = MarketMoversRequest(
+        #     top=50,
+        #     market_type=MarketType.STOCKS,
+        # )
+        # losers = client.get_market_movers(params)
+        # losers_list = []
+        # # Iterate through the losers and append the symbol to the list
+        # for sym in losers.losers:
+        #     losers_list.append(sym.symbol)
+        # # Return list of losers
+        # return losers_list
     
     ########################################################
     # Market buy function
