@@ -8,6 +8,8 @@ from tqdm import tqdm
 from datetime import datetime
 from requests_html import HTMLSession
 
+from alpaca.common import APIError
+
 from alpaca.data import StockHistoricalDataClient
 from alpaca.trading.client import TradingClient
 from alpaca.data.timeframe import TimeFrame
@@ -333,6 +335,7 @@ class AlpacaAPI:
                             ((current_positions_hist[['bbhi14', 'bbhi30', 'bbhi50', 'bbhi200']] == 1).any(axis=1))
         # Filter the stocks to sell
         sell_filtered = current_positions_hist[sell_criteria]
+
         # Make sure the symbols are in a list
         symbols = sell_filtered['Symbol'].tolist()
         
@@ -353,7 +356,7 @@ class AlpacaAPI:
                 # Submit a market sell order
                 self.market_sell(symbol=symbol, qty=qty)
             # If there is an exception, print the exception
-            except Exception as e:
+            except APIError as e:
                 print(e)
                 continue
             # Print the message if the order is successful
@@ -384,14 +387,14 @@ class AlpacaAPI:
 
         # Get the current positions and available cash
         df_current_positions = self.get_current_positions()
+        position_count = len(df_current_positions[df_current_positions['asset'] != 'Cash']['asset'].tolist())
         available_cash = df_current_positions[df_current_positions['asset'] == 'Cash']['qty'].values[0]
 
         # Calculate the notional value for each stock
         # Divide the available cash by the number of tickers
         # This is the amount to buy for each stock
-        # 10% of the available cash is kept for future rebalancing
         # First few days will create large positions, but will be rebalanced in the future (hopefully :D)
-        notional = (available_cash - (available_cash * 0.1)) / len(tickers)
+        notional = available_cash / len(tickers)
 
         # Iterate through the tickers and buy the stocks
         for ticker in tickers:
@@ -399,7 +402,7 @@ class AlpacaAPI:
                 # Submit a market buy order
                 self.market_buy(symbol=ticker, notional=notional)
             # If there is an exception, print the exception
-            except Exception as e:
+            except APIError as e:
                 print(e)
                 continue
             # Print the message if the order is successful
@@ -636,7 +639,7 @@ class AlpacaAPI:
         # Create a MarketOrderRequest object
         order_data = MarketOrderRequest(
                 symbol=symbol,
-                notional=notional if notional else None,
+                notional=round(notional, 2) if notional else None,
                 qty=qty if qty else None,
                 side=OrderSide.BUY,
                 time_in_force=TimeInForce.DAY
@@ -669,7 +672,7 @@ class AlpacaAPI:
         order_data = MarketOrderRequest(
                 symbol=symbol,
                 qty=qty if qty else None,
-                notional=notional if notional else None,
+                notional=round(notional, 2) if notional else None,
                 side=OrderSide.SELL,
                 time_in_force=TimeInForce.DAY
             )
