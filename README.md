@@ -30,9 +30,9 @@ I just started developing this on 4/28/2024 and have no idea as of yet if this s
 
 - Retrieve market data and interact with api from [Alpaca API](https://alpaca.markets/)
 - Pulls previous day losers from Yahoo Finance 
-- Gets recent articles from [MarketAux](https://www.marketaux.com/) API
-- Extracts article text using [ArticleExtractor](https://www.articlextractor.com/) API
-- Gets article sentiment using [OpenAi](https://platform.openai.com) API
+- Gets recent articles using [MarketAux API](https://www.marketaux.com/) 
+- Extracts article text using [ArticleExtractor API](https://www.articlextractor.com/) 
+- Gets article sentiment using [OpenAi API](https://platform.openai.com) 
 - Place buy and sell orders based on the strategy buy/sell criterias
 
 ## Installation
