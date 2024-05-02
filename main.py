@@ -10,6 +10,8 @@ def main():
     alpaca.liquidate_positions_for_capital()
     # Check for buy orders based on buy criteria
     alpaca.buy_orders()
+
+    alpaca.send_slack_message("Heroku App is running!")
     
 if __name__ == "__main__":
     main()
