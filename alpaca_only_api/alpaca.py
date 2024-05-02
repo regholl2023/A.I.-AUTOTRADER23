@@ -8,7 +8,7 @@ from tqdm import tqdm
 from datetime import datetime
 from requests_html import HTMLSession
 
-from alpaca.common import APIError
+from alpaca.common.exceptions import APIError
 
 from alpaca.data import StockHistoricalDataClient
 from alpaca.trading.client import TradingClient
@@ -22,23 +22,30 @@ from ta.momentum import RSIIndicator
 
 from openai import OpenAI
 
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+
 # Load environment variables
 if not os.getenv("PRODUCTION"):
     from dotenv import dotenv_values
     config = dotenv_values(".env")
+    production = config['PRODUCTION']
     alpaca_key_id = config['ALPACA_KEY_ID']
     alpaca_secret_key = config['ALPACA_SECRET_KEY']
     alpaca_paper = config['ALPACA_PAPER']
     article_key = config['MARKETAUX_API_KEY']
     extract_key = config['ARTICLEEXTRACT_API_KEY']
     openai_key = config['OPENAI_API_KEY']
+    slack_token = config['SLACK_ACCESS_TOKEN']
 else:
+    production = os.getenv('PRODUCTION')
     alpaca_key_id = os.getenv('ALPACA_KEY_ID')
     alpaca_secret_key = os.getenv('ALPACA_SECRET_KEY')
     alpaca_paper = os.getenv('ALPACA_PAPER')
     article_key = os.getenv('MARKETAUX_API_KEY')
     extract_key = os.getenv('ARTICLEEXTRACT_API_KEY')
     openai_key = os.getenv('OPENAI_API_KEY')
+    slack_token = os.getenv('SLACK_ACCESS_TOKEN')
 
 # Define the AlpacaAPI class
 class AlpacaAPI:
@@ -49,6 +56,27 @@ class AlpacaAPI:
         # Set the Alpaca API key and secret key
         self.alpaca_key_id = alpaca_key_id
         self.alpaca_secret_key = alpaca_secret_key
+
+    def send_slack_message(self, message):
+        """
+        Send a message to a Slack channel
+        :param message: Message to send
+        """
+        # Create a WebClient object
+
+        client = WebClient(token=slack_token)
+
+        try:
+            response = client.chat_postMessage(channel='#app-development', text=f"{message}", username='@messages_from_api')
+            assert response["message"]["text"] == f"{message}"
+        except SlackApiError as e:
+            # You will get a SlackApiError if "ok" is False
+            assert e.response["ok"] is False
+            assert e.response["error"]  # str like 'invalid_auth', 'channel_not_found'
+            print(f"Got an error: {e.response['error']}")
+            # Also receive a corresponding status_code
+            assert isinstance(e.response.status_code, int)
+            print(f"Received a response status_code: {e.response.status_code}")
 
     ########################################################
     # Define the get_buy_opportunities function
@@ -248,8 +276,11 @@ class AlpacaAPI:
                     clean_symbols.append(symbol)
                 else:
                     continue
-            except Exception as e:
-                print(e)
+            except APIError as e:
+                if not production:
+                    print(e)
+                else:
+                    self.send_slack_message(f"Error Getting Asset: {e}")
                 continue
         # Return the clean symbols list of market losers that are fractionable
         return clean_symbols
@@ -298,17 +329,10 @@ class AlpacaAPI:
                 if amount_to_sell == 0:
                     continue
 
-                # Try to sell the stock
-                try:
-                    # Submit a market sell order
-                    self.market_sell(symbol=row['asset'], notional=amount_to_sell)
-                # If there is an exception, print the exception
-                except Exception as e:
-                    print(e)
+                if not self.market_sell(symbol=row['asset'], notional=amount_to_sell):
                     continue
-                # Print the message if the order is successful
                 else:
-                    print(f"Sold {amount_to_sell} of {row['asset']} at market price")
+                    self.send_slack_message(f"Liquidated {row['asset']} to make cash 10% portfolio cash requirement")
 
     ########################################################
     # Define the sell_orders_from_sell_criteria function
@@ -350,18 +374,11 @@ class AlpacaAPI:
         
         # Iterate through the symbols and sell the stocks
         for symbol in symbols:
-            try:
-                # Get the quantity of the stock
-                qty = current_positions[current_positions['asset'] == symbol]['qty'].values[0]
-                # Submit a market sell order
-                self.market_sell(symbol=symbol, qty=qty)
-            # If there is an exception, print the exception
-            except APIError as e:
-                print(e)
+            # Get the quantity of the stock
+            qty = current_positions[current_positions['asset'] == symbol]['qty'].values[0]
+            # Submit a market sell order
+            if not self.market_sell(symbol=symbol, qty=qty):
                 continue
-            # Print the message if the order is successful
-            else:
-                print(f"Sold {qty} of {symbol} at market price")
         
         return True
 
@@ -387,7 +404,6 @@ class AlpacaAPI:
 
         # Get the current positions and available cash
         df_current_positions = self.get_current_positions()
-        position_count = len(df_current_positions[df_current_positions['asset'] != 'Cash']['asset'].tolist())
         available_cash = df_current_positions[df_current_positions['asset'] == 'Cash']['qty'].values[0]
 
         # Calculate the notional value for each stock
@@ -398,16 +414,8 @@ class AlpacaAPI:
 
         # Iterate through the tickers and buy the stocks
         for ticker in tickers:
-            try:
-                # Submit a market buy order
-                self.market_buy(symbol=ticker, notional=notional)
-            # If there is an exception, print the exception
-            except APIError as e:
-                print(e)
+            if not self.market_buy(symbol=ticker, notional=notional):
                 continue
-            # Print the message if the order is successful
-            else:
-                print(f"Bought {ticker} at ${notional}")
 
         return True
 
@@ -596,34 +604,6 @@ class AlpacaAPI:
         return bar_df
     
     ########################################################
-    # Define the get_market_losers function OLD VERSION
-    ########################################################
-    #def get_market_losers(self):
-        """
-        ALPACA SCREENER API IS NOT WORKING WELL FOR THIS STRATEGY
-        NO WAY TO FILTER RETURNS BY MARKET CAP
-        Get the market losers from Alpaca API ScreenerClient
-        The function returns the top 50 market losers
-        Which can be used to filter the stocks based on the losers
-        The strategy is to buy the stocks that are losers that are oversold based on RSI and Bollinger Bands
-        return: List of market losers
-        """
-        # Create a TradingClient object
-        # client = ScreenerClient(api_key=self.alpaca_key_id, secret_key=self.alpaca_secret_key)
-        # # Get the losers
-        # params = MarketMoversRequest(
-        #     top=50,
-        #     market_type=MarketType.STOCKS,
-        # )
-        # losers = client.get_market_movers(params)
-        # losers_list = []
-        # # Iterate through the losers and append the symbol to the list
-        # for sym in losers.losers:
-        #     losers_list.append(sym.symbol)
-        # # Return list of losers
-        # return losers_list
-    
-    ########################################################
     # Market buy function
     ########################################################
     def market_buy(self, symbol, notional=None, qty=None):
@@ -649,9 +629,17 @@ class AlpacaAPI:
             # Submit the order to the Alpaca API
             client.submit_order(order_data)
         # If there is an exception, print the exception
-        except Exception as e:
-            print(e)
+        except APIError as e:
+            if not production:
+                print(e)
+            else:
+                self.send_slack_message(f"Error Buying: {e}")
             return False
+        else:
+            if not production:
+                print(f"Bought {qty if qty else notional} of {symbol} at market price")
+            else:   
+                self.send_slack_message(f"Bought {qty if qty else notional} of {symbol} at market price")
         # Return True if the order is successful
         return True
     
@@ -681,9 +669,17 @@ class AlpacaAPI:
             # Submit the order to the Alpaca API
             client.submit_order(order_data)
         # If there is an exception, print the exception
-        except Exception as e:
-            print(e)
+        except APIError as e:
+            if not production:
+                print(e)
+            else:
+                self.send_slack_message(f"Error Selling: {e}")
             return False
+        else:
+            if not production:
+                print(f"Sold {qty if qty else notional} of {symbol} at market price")
+            else:   
+                self.send_slack_message(f"Sold {qty if qty else notional} of {symbol} at market price")
         # Return True if the order is successful
         return True
     

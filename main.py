@@ -7,9 +7,9 @@ def main():
     # Check for sell orders based on sell criteria
     alpaca.sell_orders_from_sell_criteria()
     # Check account for capital and liquidate positions if needed
-    #alpaca.liquidate_positions_for_capital()
+    alpaca.liquidate_positions_for_capital()
     # Check for buy orders based on buy criteria
-    #alpaca.buy_orders()
+    alpaca.buy_orders()
     
 if __name__ == "__main__":
     main()
