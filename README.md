@@ -6,7 +6,9 @@
 
 ## Description
 
-The Alpaca Only API is a Python project that provides a way to automate trades using only data provided by the AlpacaAPI other than the market losers, which are pulled from yahoo finance. This is currently in development and is in no way to be trusted to be a functioning bot. As it currently stands this script should be once a day and it picks the losers from previous day to filter buy picks using ta indicators. All pull articles from https://www.marketaux.com and using openAi to give sentiment analysis of article content, to help pick stocks more likely to rise after losing.
+The Alpaca Only API is a Python project that provides a way to automate trades using only data provided by the AlpacaAPI other than the market losers, which are pulled from yahoo finance. This is currently in development and is in no way to be trusted to be a functioning bot. As it currently stands this script should be once a day and it picks the losers from previous day to filter buy picks using ta indicators. Also pulls articles from https://www.marketaux.com and using openAi to give sentiment analysis of article content, to help pick stocks more likely to rise after losing.
+
+I am currently running this script on Heroku, using Advanced Scheduler to run it at market open. Also I run it at 11AM and then again at 2:30PM but only to look for sell opportunities.
 
 This is all just a test strategy, but many of the functions could be helpful for those just trying out Alpacas Python API
 
