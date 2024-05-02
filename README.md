@@ -29,7 +29,7 @@ I just started developing this on 4/28/2024 and have no idea as of yet if this s
 ## Features
 
 - Retrieve market data and interact with api from [Alpaca API](https://alpaca.markets/)
-- Pulls current losers from Yahoo Finance 
+- Pulls previous day losers from Yahoo Finance 
 - Gets recent articles from [MarketAux](https://www.marketaux.com/) API
 - Extracts article text using [ArticleExtractor](https://www.articlextractor.com/) API
 - Gets article sentiment using [OpenAi](https://platform.openai.com) API
@@ -49,7 +49,7 @@ I just started developing this on 4/28/2024 and have no idea as of yet if this s
     poetry install
     ```
     or
-    
+
     ```bash
     pip install -r requirements.txt
     ```
