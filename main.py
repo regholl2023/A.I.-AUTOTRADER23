@@ -19,6 +19,8 @@ def main():
     # Check if the current time is between 9:50 AM and 3:30 PM
     # If it is, check for only sell orders
     elif current_hour == 15:
+        # Check for sell orders based on sell criteria
+        alpaca.sell_orders_from_sell_criteria()
         # Check account for capital and liquidate positions if needed
         alpaca.liquidate_positions_for_capital()
     else:

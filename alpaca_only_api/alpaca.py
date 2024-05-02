@@ -267,8 +267,10 @@ class AlpacaAPI:
 
         clean_symbols = []
         # Check if the stock is fractionable
+        # If the stock is fractionable, add it to the clean symbols list
         for symbol in raw_symbols:
             try:
+                # If the symbol has a '-' in it, continue to the next symbol (NOT A STOCK TICKER)
                 if '-' in symbol:
                     continue
                 asset = client.get_asset(symbol)
