@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "alpaca-only-api"
+name = "txcode-alpaca-strategies"
 version = "0.1.0"
 description = ""
 authors = ["TexasCoding <jeffw10278@proton.me>"]
