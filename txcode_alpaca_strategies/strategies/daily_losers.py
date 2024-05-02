@@ -6,12 +6,12 @@ from tqdm import tqdm
 from ta.volatility import BollingerBands
 from ta.momentum import RSIIndicator
 
-from src.alpaca import AlpacaAPI
-from src.sources.yahoo import Yahoo
-from src.sources.slack import Slack
-from src.sources.marketaux import MarketAux
-from src.sources.article_extractor import ArticleExtractor
-from src.sources.openai import OpenAiAPI
+from txcode_alpaca_strategies.alpaca import AlpacaAPI
+from txcode_alpaca_strategies.sources.yahoo import Yahoo
+from txcode_alpaca_strategies.sources.slack import Slack
+from txcode_alpaca_strategies.sources.marketaux import MarketAux
+from txcode_alpaca_strategies.sources.article_extractor import ArticleExtractor
+from txcode_alpaca_strategies.sources.openai import OpenAiAPI
 
 from dotenv import load_dotenv
 load_dotenv()

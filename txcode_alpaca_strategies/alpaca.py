@@ -13,7 +13,7 @@ from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.data.requests import StockBarsRequest
 
-from src.sources.slack import Slack
+from txcode_alpaca_strategies.sources.slack import Slack
 
 from dotenv import load_dotenv
 load_dotenv()

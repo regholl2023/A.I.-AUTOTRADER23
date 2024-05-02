@@ -1,4 +1,4 @@
-from src.strategies.daily_losers import DailyLosers
+from txcode_alpaca_strategies.strategies.daily_losers import DailyLosers
 
 from datetime import datetime
 import pytz
