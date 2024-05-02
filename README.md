@@ -1,4 +1,4 @@
-# TxCode Alpaca Strategies
+# TxCode Alpaca API Strategies
 
 ## THIS PROJECT IS UNDER DEVELOPMENT
 
@@ -6,15 +6,19 @@
 
 ## Description
 
-The Alpaca Only API is a Python project that provides a way to automate trades using only data provided by the AlpacaAPI other than the market losers, which are pulled from yahoo finance. This is currently in development and is in no way to be trusted to be a functioning bot. As it currently stands this script should be once a day and it picks the losers from previous day to filter buy picks using ta indicators. Also pulls articles from https://www.marketaux.com and using openAi to give sentiment analysis of article content, to help pick stocks more likely to rise after losing.
+This is a Python project that provides a way to automate trades using only data provided by the Alpaca API other than the market losers, which are pulled from yahoo finance. This is currently in development and is in no way to be trusted to be a functioning bot. As it currently stands this script should be once a day and it picks the losers from previous day to filter buy picks using ta indicators. Also pulls articles from https://www.marketaux.com and using openAi to give sentiment analysis of article content, to help pick stocks more likely to rise after losing.
 
-I am currently running this script on Heroku, using Advanced Scheduler to run it at various times. Not set times yet. I am experimenting with run times, so the main.py will change often.
+I have also implemented Slack for app notifications, but it is not required to run the app. If no slack api token is provided, it will just print messages
+
+I am currently running this script on Heroku, using Advanced Scheduler to run it at various times. No set times yet. I am experimenting with run times, so the main.py will change often. 
 
 This is all just a test strategy, but many of the functions could be helpful for those just trying out Alpacas Python API
 
 Currently testing functionality in a paper account. 
 
 I will be updating daily and testing using paper account until it is proven to work.
+
+As of today 05/02/2024 the DailyLosers strategy seems to be functioning as intended. The only function that has not triggered yet is the sell criteria. But none of the conditions have been met for sells. I will post more info and results over the coming weeks. I will also work on other strategies, so any ideas or suggestions would be appreciated.
 
 The API's used for this strategy are listed below. Each service offers free or really low price options. But for the script and strategy to function as it stands, you will need API keys from each of them.
 
