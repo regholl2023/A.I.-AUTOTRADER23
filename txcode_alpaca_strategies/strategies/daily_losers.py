@@ -191,6 +191,11 @@ class DailyLosers():
                     else:
                         self.slack.send_message(channel='#app-development', message=f"Error Liquidating:\n {e}", username='@messages_from_api')
                     continue
+                else:
+                    if not production:
+                        print(f"Successfully sold {row['asset']} at {amount_to_sell}")
+                    else:
+                        self.slack.send_message(channel='#app-development', message=f"Successfully liquidated {row['asset']} at {amount_to_sell}", username='@messages_from_api')
 
     ########################################################
     # Define the sell_orders_from_sell_criteria function
@@ -243,6 +248,11 @@ class DailyLosers():
                 else:
                     self.slack.send_message(channel='#app-development', message=f"Error Selling:\n {e}", username='@messages_from_api')
                 continue
+            else:
+                if not production:
+                    print(f"Successfully sold {symbol} at {qty}")
+                else:
+                    self.slack.send_message(channel='#app-development', message=f"Successfully sold {symbol} at {qty}", username='@messages_from_api')
 
     ########################################################
     # Define the buy_orders function
@@ -279,6 +289,11 @@ class DailyLosers():
                 else:
                     self.slack.send_message(channel='#app-development', message=f"Error Buying, {e}", username='@messages_from_api')
                 continue
+            else:
+                if not production:
+                    print(f"Successfully bought {ticker} at {notional}")
+                else:    
+                    self.slack.send_message(channel='#app-development', message=f"Successfully bought {ticker} at {notional}", username='@messages_from_api')
 
     ########################################################
     # Define the get_ticker_info function
