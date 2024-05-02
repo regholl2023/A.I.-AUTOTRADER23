@@ -1,4 +1,4 @@
-# Alpaca Only API
+# TxCode Alpaca Strategies
 
 ## THIS PROJECT IS UNDER DEVELOPMENT
 
