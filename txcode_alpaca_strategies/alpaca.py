@@ -13,8 +13,6 @@ from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.data.requests import StockBarsRequest
 
-from txcode_alpaca_strategies.sources.slack import Slack
-
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -30,7 +28,7 @@ class AlpacaAPI:
     Alpaca API class to interact with Alpaca API
     """
     def __init__(self):
-        self.slack = Slack()
+        pass
     
     ########################################################
     # Define the get_current_positions function

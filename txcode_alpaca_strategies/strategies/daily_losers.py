@@ -28,12 +28,12 @@ class DailyLosers():
     '''
     def __init__(self):
         # Initialize the Alpaca API, Yahoo Finance, Slack, MarketAux, ArticleExtractor, and OpenAI
-        self.alpaca = AlpacaAPI()
-        self.yahoo = Yahoo()
-        self.slack = Slack()
-        self.marketaux = MarketAux()
-        self.article_extractor = ArticleExtractor()
-        self.openai = OpenAiAPI()
+        self.alpaca             = AlpacaAPI()
+        self.yahoo              = Yahoo()
+        self.slack              = Slack()
+        self.marketaux          = MarketAux()
+        self.article_extractor  = ArticleExtractor()
+        self.openai             = OpenAiAPI()
         
     ########################################################
     # Define the get_buy_opportunities function
@@ -53,7 +53,7 @@ class DailyLosers():
                           ((market_losers[['bblo14', 'bblo30', 'bblo50', 'bblo200']] == 1).any(axis=1))
         
         buy_filtered_df = market_losers[buy_criteria]
-        filtered_list = buy_filtered_df['Symbol'].tolist()
+        filtered_list   = buy_filtered_df['Symbol'].tolist()
 
         news_filtered_list = []
         # Filter the losers based on news sentiment from MarketAux API and OpenAI sentiment analysis
@@ -79,7 +79,6 @@ class DailyLosers():
 
         bulls = 0
         bears = 0
-        
         # If there are no news articles, return False
         if data.empty:
             return False
@@ -130,7 +129,7 @@ class DailyLosers():
                 else:
                     continue
             except Exception as e:
-                if not production:
+                if production == False:
                     print(e)
                 else:
                     self.slack.send_message(channel='#app-development', message=f"Error: {e}", username='@messages_from_api')
@@ -158,8 +157,8 @@ class DailyLosers():
                 print("No current positions")
             return False
 
-        cash_row = current_positions[current_positions['asset'] == 'Cash']
-        total_holdings = current_positions['market_value'].sum()
+        cash_row        = current_positions[current_positions['asset'] == 'Cash']
+        total_holdings  = current_positions['market_value'].sum()
 
         if cash_row['market_value'].values[0] / total_holdings < 0.1:
             # Remove the cash row
@@ -168,9 +167,9 @@ class DailyLosers():
             curpositions = curpositions.sort_values(by='profit_pct', ascending=False) 
 
             # Sell the top 25% of performing stocks evenly to make cash 10% of total portfolio
-            top_performers = curpositions.iloc[:int(len(curpositions) // 2)]
+            top_performers              = curpositions.iloc[:int(len(curpositions) // 2)]
             top_performers_market_value = top_performers['market_value'].sum()
-            cash_needed = total_holdings * 0.1 - cash_row['market_value'].values[0]
+            cash_needed                 = total_holdings * 0.1 - cash_row['market_value'].values[0]
 
             # Sell the top performers to make cash 10% of the portfolio
             for index, row in top_performers.iterrows():
@@ -186,13 +185,13 @@ class DailyLosers():
                 try:
                     self.alpaca.market_sell(symbol=row['asset'], notional=amount_to_sell)
                 except Exception as e:
-                    if not production:
+                    if production == False:
                         print(e)
                     else:
                         self.slack.send_message(channel='#app-development', message=f"Error Liquidating:\n {e}", username='@messages_from_api')
                     continue
                 else:
-                    if not production:
+                    if production == False:
                         print(f"Successfully sold {row['asset']} at {amount_to_sell}")
                     else:
                         self.slack.send_message(channel='#app-development', message=f"Successfully liquidated {row['asset']} at {amount_to_sell}", username='@messages_from_api')
@@ -243,13 +242,13 @@ class DailyLosers():
             try:
                 self.alpaca.market_sell(symbol=symbol, qty=qty)
             except Exception as e:  
-                if not production:
+                if production == False:
                     print(e)
                 else:
                     self.slack.send_message(channel='#app-development', message=f"Error Selling:\n {e}", username='@messages_from_api')
                 continue
             else:
-                if not production:
+                if production == False:
                     print(f"Successfully sold {symbol} at {qty}")
                 else:
                     self.slack.send_message(channel='#app-development', message=f"Successfully sold {symbol} at {qty}", username='@messages_from_api')
@@ -284,13 +283,13 @@ class DailyLosers():
             try:
                 self.alpaca.market_buy(symbol=ticker, notional=notional)
             except Exception as e:
-                if not production:
+                if production == False:
                     print(e)
                 else:
                     self.slack.send_message(channel='#app-development', message=f"Error Buying, {e}", username='@messages_from_api')
                 continue
             else:
-                if not production:
+                if production == False:
                     print(f"Successfully bought {ticker} at {notional}")
                 else:    
                     self.slack.send_message(channel='#app-development', message=f"Successfully bought {ticker} at {notional}", username='@messages_from_api')
