@@ -71,6 +71,7 @@ I just started developing this on 4/28/2024 and have no idea as of yet if this s
     MARKETAUX_API_KEY=your_market_aux_api_key
     ARTICLEEXTRACT_API_KEY=your_article_extractor_api_key
     SLACK_ACCESS_TOKEN=your_slack_app_api_key
+    SLACK_USERNAME=@your_apps_username
     ```
 2. I split this project into multiple modules to make future strategies easier to create. Currently I am just working on the DailyLosers class and working out any issues. Below is how my current main.py is setup. This and much more will change in the coming days. Most likely the folder structure/file names/etc.. will change until I have it setup completely.
 
