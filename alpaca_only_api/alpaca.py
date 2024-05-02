@@ -280,7 +280,7 @@ class AlpacaAPI:
                 if not production:
                     print(e)
                 else:
-                    formatted_text = f"```{json.dumps(e, indent = 2)}```"
+                    formatted_text = json.dumps(e, indent = 2)
                     self.send_slack_message(f"Error Getting Asset: {formatted_text}")
                 continue
         # Return the clean symbols list of market losers that are fractionable
@@ -634,7 +634,7 @@ class AlpacaAPI:
             if not production:
                 print(e)
             else:
-                formatted_text = f"```{json.dumps(e, indent = 2)}```"
+                formatted_text = json.dumps(e, indent = 2)
                 self.send_slack_message(f"Error Buying: {formatted_text}")
             return False
         else:
@@ -675,7 +675,7 @@ class AlpacaAPI:
             if not production:
                 print(e)
             else:
-                formatted_text = f"```{json.dumps(e, indent = 2)}```"
+                formatted_text = json.dumps(e, indent = 2)
                 self.send_slack_message(f"Error Selling: {formatted_text}")
             return False
         else:
