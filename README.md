@@ -40,7 +40,7 @@ I just started developing this on 4/28/2024 and have no idea as of yet if this s
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/your-username/alpaca-only-api.git
+    git clone https://github.com/TexasCoding/txcode-alpaca-strategies.git
     ```
 
 2. Install the required dependencies:
@@ -68,30 +68,46 @@ I just started developing this on 4/28/2024 and have no idea as of yet if this s
     ARTICLEEXTRACT_API_KEY=your_article_extractor_api_key
     SLACK_ACCESS_TOKEN=your_slack_app_api_key
     ```
+2. I split this project into multiple modules to make future strategies easier to create. Currently I am just working on the DailyLosers class and working out any issues. Below is how my current main.py is setup. This and much more will change in the coming days. Most likely the folder structure/file names/etc.. will change until I have it setup completely.
+
+```python
+from txcode_alpaca_strategies.strategies.daily_losers import DailyLosers
+
+from datetime import datetime
+import pytz
+now = datetime.now(tz=pytz.timezone('US/Eastern'))
+print("Current time is: ", now.strftime("%m/%d/%Y, %H:%M:%S"))
+current_hour = now.hour
+current_minute = now.minute
+
+    def main():
+        # Set the Alpaca API key and secret key
+        daily_losers = DailyLosers()
+
+        # Check if the current time is before 9:50 AM
+        # If it is, check for sell orders, liquidate positions, and check for buy orders
+        if current_hour > 9 and current_hour <= 14:
+            # Check for sell orders based on sell criteria
+            daily_losers.sell_orders_from_sell_criteria()
+        # Check if the current time is between 9:50 AM and 3:30 PM
+        # If it is, check for only sell orders
+        elif current_hour == 15:
+            # Check for sell orders based on sell criteria
+            daily_losers.sell_orders_from_sell_criteria()
+            # Check account for capital and liquidate positions if needed
+            daily_losers.liquidate_positions_for_capital()
+        else:
+            # Check for buy orders based on buy criteria
+            daily_losers.buy_orders()
+        
+if __name__ == "__main__":
+    main()
+```
 
 2. Run the script
 
     ```bash
     python main.py
-    ```
-    The main.py file will change daily possibly, depending on what I am testing out. There are 3 main functions for this strategy to operate.
-
-    1. The sell based on criteria function will search through your current positions and look for sell opportunities based on the stratigies criteria.
-    ```python
-    # Check for sell orders based on sell criteria
-    alpaca.sell_orders_from_sell_criteria()
-    ```
-
-    2. The liquidate positions for capital function, will sell some quantities of assets to provide enough capital for next buying opportunities. Should be ran before running the buy function.
-    ```python
-    # Check account for capital and liquidate positions if needed
-    alpaca.liquidate_positions_for_capital()
-    ```
-
-    3. The buy orders functions, searches for previous day losers and filters through to find and purchase stocks based on ta indicators and article sentiment analysis
-    ```python
-    # Check for buy orders based on buy criteria
-    alpaca.buy_orders()
     ```
 
 ## Contributing
