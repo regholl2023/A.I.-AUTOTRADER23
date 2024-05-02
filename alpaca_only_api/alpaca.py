@@ -281,7 +281,7 @@ class AlpacaAPI:
                     print(e)
                 else:
                     formatted_text = f"```{json.dumps(e, indent = 2)}```"
-                    self.send_slack_message(f"Error Getting Asset\n: {formatted_text}")
+                    self.send_slack_message(f"Error Getting Asset: {formatted_text}")
                 continue
         # Return the clean symbols list of market losers that are fractionable
         return clean_symbols
