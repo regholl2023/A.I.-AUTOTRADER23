@@ -1,6 +1,5 @@
 import os
 import time
-import json
 import pandas as pd
 from tqdm import tqdm
 
@@ -14,15 +13,11 @@ from src.sources.marketaux import MarketAux
 from src.sources.article_extractor import ArticleExtractor
 from src.sources.openai import OpenAiAPI
 
-from dotenv import dotenv_values
-config = dotenv_values(".env")
+from dotenv import load_dotenv
+load_dotenv()
 
 # Load environment variables
-if not os.getenv("PRODUCTION") or not config['PRODUCTION']:
-    config = dotenv_values(".env")
-    production = config['PRODUCTION']
-else:
-    production = os.getenv('PRODUCTION')
+production = os.getenv('PRODUCTION')
 
 
 class DailyLosers():

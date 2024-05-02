@@ -15,20 +15,14 @@ from alpaca.data.requests import StockBarsRequest
 
 from src.sources.slack import Slack
 
-from dotenv import dotenv_values
-config = dotenv_values(".env")
+from dotenv import load_dotenv
+load_dotenv()
 
 # Load environment variables
-if not os.getenv("PRODUCTION") or not config['PRODUCTION']:
-    production = config['PRODUCTION']
-    alpaca_key_id = config['ALPACA_KEY_ID']
-    alpaca_secret_key = config['ALPACA_SECRET_KEY']
-    alpaca_paper = config['ALPACA_PAPER']
-else:
-    production = os.getenv('PRODUCTION')
-    alpaca_key_id = os.getenv('ALPACA_KEY_ID')
-    alpaca_secret_key = os.getenv('ALPACA_SECRET_KEY')
-    alpaca_paper = os.getenv('ALPACA_PAPER')
+production = os.getenv('PRODUCTION')
+alpaca_key_id = os.getenv('ALPACA_KEY_ID')
+alpaca_secret_key = os.getenv('ALPACA_SECRET_KEY')
+alpaca_paper = os.getenv('ALPACA_PAPER')
 
 # Define the AlpacaAPI class
 class AlpacaAPI:

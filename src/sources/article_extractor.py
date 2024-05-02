@@ -2,16 +2,12 @@ import os
 import json
 import http.client, urllib.parse
 
-from dotenv import dotenv_values
-config = dotenv_values(".env")
+from dotenv import load_dotenv
+load_dotenv()
 
 # Load environment variables
-if not os.getenv("PRODUCTION") or not config['PRODUCTION']:
-    production = config['PRODUCTION']
-    extract_key = config['ARTICLEEXTRACT_API_KEY']
-else:
-    production = os.getenv('PRODUCTION')
-    extract_key = os.getenv('ARTICLEEXTRACT_API_KEY')
+production = os.getenv('PRODUCTION')
+extract_key = os.getenv('ARTICLEEXTRACT_API_KEY')
 
 class ArticleExtractor:
     def __init__(self):

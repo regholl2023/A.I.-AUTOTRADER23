@@ -1,16 +1,12 @@
 import os
 from openai import OpenAI
 
-from dotenv import dotenv_values
-config = dotenv_values(".env")
+from dotenv import load_dotenv
+load_dotenv()
 
 # Load environment variables
-if not os.getenv("PRODUCTION") or not config['PRODUCTION']:
-    production = config['PRODUCTION']
-    openai_key = config['OPENAI_API_KEY']
-else:
-    production = os.getenv('PRODUCTION')
-    openai_key = os.getenv('OPENAI_API_KEY')
+production = os.getenv('PRODUCTION')
+openai_key = os.getenv('OPENAI_API_KEY')
 
 class OpenAiAPI:
     def __init__(self):

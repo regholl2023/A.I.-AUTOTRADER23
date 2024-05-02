@@ -3,16 +3,12 @@ import json
 import http.client, urllib.parse
 import pandas as pd
 
-from dotenv import dotenv_values
-config = dotenv_values(".env")
+from dotenv import load_dotenv
+load_dotenv()
 
 # Load environment variables
-if not os.getenv("PRODUCTION") or not config['PRODUCTION']:
-    production = config['PRODUCTION']
-    article_key = config['MARKETAUX_API_KEY']
-else:
-    production = os.getenv('PRODUCTION')
-    article_key = os.getenv('MARKETAUX_API_KEY')
+production = os.getenv('PRODUCTION')
+article_key = os.getenv('MARKETAUX_API_KEY')
 
 class MarketAux:
     def __init__(self):

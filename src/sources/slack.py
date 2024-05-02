@@ -3,16 +3,12 @@ import os
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-from dotenv import dotenv_values
-config = dotenv_values(".env")
+from dotenv import load_dotenv
+load_dotenv()
 
 # Load environment variables
-if not os.getenv("PRODUCTION") or not config['PRODUCTION']:
-    production = config['PRODUCTION']
-    slack_token = config['SLACK_ACCESS_TOKEN']
-else:
-    production = os.getenv('PRODUCTION')
-    slack_token = os.getenv('SLACK_ACCESS_TOKEN')
+production = os.getenv('PRODUCTION')
+slack_token = os.getenv('SLACK_ACCESS_TOKEN')
 
 class Slack:
     '''
