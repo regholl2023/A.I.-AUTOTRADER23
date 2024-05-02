@@ -383,7 +383,6 @@ class AlpacaAPI:
         
         return True
 
-
     ########################################################
     # Define the buy_orders function
     ########################################################
@@ -395,10 +394,10 @@ class AlpacaAPI:
         return: False if market is closed
         """
         # Check if the market is open
-        if not self.is_market_open():
-            print("Market is closed")
-            # Return False if the market is closed
-            return False
+        # if not self.is_market_open():
+        #     print("Market is closed")
+        #     # Return False if the market is closed
+        #     return False
         
         # Get the tickers from the get_ticker_info function and convert symbols to a list
         tickers = self.get_buy_opportunities()['Symbol'].tolist()
