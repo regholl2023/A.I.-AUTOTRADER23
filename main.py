@@ -2,10 +2,12 @@ from txcode_alpaca_strategies.strategies.daily_losers import DailyLosers
 
 from datetime import datetime
 import pytz
+
 now = datetime.now(tz=pytz.timezone('US/Eastern'))
 print("Current time is: ", now.strftime("%m/%d/%Y, %H:%M:%S"))
 current_hour = now.hour
 current_minute = now.minute
+current_day = now.weekday()
 
 def main():
     # Set the Alpaca API key and secret key

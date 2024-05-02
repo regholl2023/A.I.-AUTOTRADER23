@@ -18,6 +18,7 @@ load_dotenv()
 
 # Load environment variables
 production = os.getenv('PRODUCTION')
+slack_user = os.getenv('SLACK_USERNAME')
 
 
 class DailyLosers():
@@ -34,7 +35,7 @@ class DailyLosers():
         self.marketaux          = MarketAux()
         self.article_extractor  = ArticleExtractor()
         self.openai             = OpenAiAPI()
-        
+
     ########################################################
     # Define the get_buy_opportunities function
     ########################################################
@@ -132,7 +133,7 @@ class DailyLosers():
                 if production == False:
                     print(e)
                 else:
-                    self.slack.send_message(channel='#app-development', message=f"Error: {e}", username='@messages_from_api')
+                    self.slack.send_message(channel='#app-development', message=f"Error: {e}", username=slack_user)
                 continue
         # Return the clean symbols list of market losers that are fractionable
         return clean_symbols
@@ -188,13 +189,13 @@ class DailyLosers():
                     if production == False:
                         print(e)
                     else:
-                        self.slack.send_message(channel='#app-development', message=f"Error Liquidating:\n {e}", username='@messages_from_api')
+                        self.slack.send_message(channel='#app-development', message=f"Error Liquidating:\n {e}", username=slack_user)
                     continue
                 else:
                     if production == False:
                         print(f"Successfully sold {row['asset']} at {amount_to_sell}")
                     else:
-                        self.slack.send_message(channel='#app-development', message=f"Successfully liquidated {row['asset']} at {amount_to_sell}", username='@messages_from_api')
+                        self.slack.send_message(channel='#app-development', message=f"Successfully liquidated {row['asset']} at {amount_to_sell}", username=slack_user)
 
     ########################################################
     # Define the sell_orders_from_sell_criteria function
@@ -245,13 +246,13 @@ class DailyLosers():
                 if production == False:
                     print(e)
                 else:
-                    self.slack.send_message(channel='#app-development', message=f"Error Selling:\n {e}", username='@messages_from_api')
+                    self.slack.send_message(channel='#app-development', message=f"Error Selling:\n {e}", username=slack_user)
                 continue
             else:
                 if production == False:
                     print(f"Successfully sold {symbol} at {qty}")
                 else:
-                    self.slack.send_message(channel='#app-development', message=f"Successfully sold {symbol} at {qty}", username='@messages_from_api')
+                    self.slack.send_message(channel='#app-development', message=f"Successfully sold {symbol} at {qty}", username=slack_user)
 
     ########################################################
     # Define the buy_orders function
@@ -269,12 +270,14 @@ class DailyLosers():
 
         # Get the current positions and available cash
         df_current_positions = self.alpaca.get_current_positions()
+        pos_count_minus_cash = len(df_current_positions) - 1
         available_cash = df_current_positions[df_current_positions['asset'] == 'Cash']['qty'].values[0]
 
         # Calculate the notional value for each stock
         # Divide the available cash by the number of tickers
         # This is the amount to buy for each stock
         # First few days will create large positions, but will be rebalanced in the future (hopefully :D)
+            
         notional = available_cash / len(tickers)
 
         # Iterate through the tickers and buy the stocks
@@ -286,13 +289,13 @@ class DailyLosers():
                 if production == False:
                     print(e)
                 else:
-                    self.slack.send_message(channel='#app-development', message=f"Error Buying, {e}", username='@messages_from_api')
+                    self.slack.send_message(channel='#app-development', message=f"Error Buying, {e}", username=slack_user)
                 continue
             else:
                 if production == False:
                     print(f"Successfully bought {ticker} at {notional}")
                 else:    
-                    self.slack.send_message(channel='#app-development', message=f"Successfully bought {ticker} at {notional}", username='@messages_from_api')
+                    self.slack.send_message(channel='#app-development', message=f"Successfully bought {ticker} at {notional}", username=slack_user)
 
     ########################################################
     # Define the get_ticker_info function
