@@ -9,7 +9,7 @@ from alpaca.common.exceptions import APIError
 from alpaca.data import StockHistoricalDataClient
 from alpaca.trading.client import TradingClient
 from alpaca.data.timeframe import TimeFrame
-from alpaca.trading.requests import MarketOrderRequest
+from alpaca.trading.requests import MarketOrderRequest, LimitOrderRequest, StopOrderRequest, StopLimitOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.data.requests import StockBarsRequest
 
@@ -29,14 +29,154 @@ class AlpacaAPI:
     """
     def __init__(self):
         pass
+
+    ########################################################
+    # Define the submit_order function
+    ########################################################
+    def stop_limit_order(self, symbol, stop_price, limit_price, qty=None, notional=None, side='buy', time_in_force='day'):
+        """
+        Submit a stop limit order to Alpaca API
+        :param symbol: Stock symbol
+        :param stop_price: Price to buy or sell
+        :param limit_price: Price to buy or sell
+        :param qty: Quantity to buy or sell
+        :param notional: Amount to buy or sell in USD
+        :param side: buy or sell, default is buy
+        :param time_in_force: day or gtc, default is day
+        :return: True if the order is successful
+        :return: False if the order is unsuccessful
+        """
+        # Create a TradingClient object
+        client = TradingClient(api_key=alpaca_key_id, secret_key=alpaca_secret_key, paper=alpaca_paper)
+        # Create a StopLimitOrderRequest object
+        order_data = StopLimitOrderRequest(
+            symbol=symbol,
+            qty=qty if qty else None,
+            notional=round(notional, 2) if notional else None,
+            stop_price=stop_price,
+            limit_price=limit_price,
+            side=OrderSide.BUY if side == 'buy' else OrderSide.SELL,
+            time_in_force= TimeInForce.DAY if time_in_force == 'day' else TimeInForce.GTC
+        )
+        # Try to submit the order
+        try:
+            # Submit the order to the Alpaca API
+            client.submit_order(order_data)
+        # If there is an exception, print the exception
+        except APIError as e:
+            formatted_text = json.dumps(e, indent = 2)
+            raise Exception(f"stop_limit_order Error:\n {formatted_text}")
+
+    ########################################################
+    # Define the stop_order function
+    ########################################################
+    def stop_order(self, symbol, stop_price, qty=None, notional=None, side='buy', time_in_force='day'):
+        """
+        Submit a stop order to Alpaca API
+        :param symbol: Stock symbol
+        :param stop_price: Price to buy or sell
+        :param qty: Quantity to buy or sell
+        :param notional: Amount to buy or sell in USD
+        :param side: buy or sell, default is buy
+        :param time_in_force: day or gtc, default is day
+        :return: True if the order is successful
+        :return: False if the order is unsuccessful
+        """
+        # Create a TradingClient object
+        client = TradingClient(api_key=alpaca_key_id, secret_key=alpaca_secret_key, paper=alpaca_paper)
+        # Create a StopOrderRequest object
+        order_data = StopOrderRequest(
+            symbol=symbol,
+            qty=qty if qty else None,
+            notional=round(notional, 2) if notional else None,
+            stop_price=stop_price,
+            side=OrderSide.BUY if side == 'buy' else OrderSide.SELL,
+            time_in_force= TimeInForce.DAY if time_in_force == 'day' else TimeInForce.GTC
+        )
+        # Try to submit the order
+        try:
+            # Submit the order to the Alpaca API
+            client.submit_order(order_data)
+        # If there is an exception, print the exception
+        except APIError as e:
+            formatted_text = json.dumps(e, indent = 2)
+            raise Exception(f"stop_order Error:\n {formatted_text}")
+    
+    ########################################################
+    # Define the limit_order function
+    ########################################################
+    def limit_order(self, symbol, limit_price, qty=None, notional=None, side='buy', time_in_force='day'):
+        """
+        Submit a limit order to Alpaca API
+        :param symbol: Stock symbol
+        :param limit_price: Price to buy or sell
+        :param qty: Quantity to buy or sell
+        :param notional: Amount to buy or sell in USD
+        :param side: buy or sell, default is buy
+        :param time_in_force: day or gtc, default is day
+        :return: True if the order is successful
+        :return: False if the order is unsuccessful
+        """
+        # Create a TradingClient object
+        client = TradingClient(api_key=alpaca_key_id, secret_key=alpaca_secret_key, paper=alpaca_paper)
+        # Create a LimitOrderRequest object
+        order_data = LimitOrderRequest(
+            symbol=symbol,
+            qty=qty if qty else None,
+            notional=round(notional, 2) if notional else None,
+            limit_price=limit_price,
+            side=OrderSide.BUY if side == 'buy' else OrderSide.SELL,
+            time_in_force= TimeInForce.DAY if time_in_force == 'day' else TimeInForce.GTC
+        )
+        # Try to submit the order
+        try:
+            # Submit the order to the Alpaca API
+            client.submit_order(order_data)
+        # If there is an exception, print the exception
+        except APIError as e:
+            formatted_text = json.dumps(e, indent = 2)
+            raise Exception(f"limit_order Error:\n {formatted_text}")
+
+    ########################################################
+    # Market Order function
+    ########################################################
+    def market_order(self, symbol, notional=None, qty=None, side='buy', time_in_force='day'):
+        """
+        Submit a market order to Alpaca API
+        :param symbol: Stock symbol
+        :param notional: Amount to buy or sell in USD
+        :param qty: Quantity to buy or sell
+        :param side: buy or sell, default is buy
+        :param time_in_force: day or gtc, default is day
+        :return: True if the order is successful
+        :return: False if the order is unsuccessful
+        """
+        # Create a TradingClient object
+        client = TradingClient(api_key=alpaca_key_id, secret_key=alpaca_secret_key, paper=alpaca_paper)
+        # Create a MarketOrderRequest object
+        order_data = MarketOrderRequest(
+                symbol=symbol,
+                notional=round(notional, 2) if notional else None,
+                qty=qty if qty else None,
+                side=OrderSide.BUY if side == 'buy' else OrderSide.SELL,
+                time_in_force=TimeInForce.DAY if time_in_force == 'day' else TimeInForce.GTC
+            )
+        # Try to submit the order
+        try: 
+            # Submit the order to the Alpaca API
+            client.submit_order(order_data)
+        # If there is an exception, print the exception
+        except APIError as e:
+            formatted_text = json.dumps(e, indent = 2)
+            raise Exception(f"market_order Error Buying:\n {formatted_text}")
     
     ########################################################
     # Define the get_current_positions function
     ########################################################
     def get_current_positions(self):
         """
-        Get the current positions from Alpaca API, including cash
-        Probably a better way to do this, but so far this is the cleanest way to work with this stategy
+        Get the current positions from Alpaca API
+        Modify the DataFrame to include the cash position
         return: DataFrame of current positions
         """
         # Create a TradingClient object
@@ -141,24 +281,38 @@ class AlpacaAPI:
     ########################################################
     # Define the get_stock_data function
     ########################################################
-    def get_stock_data(self, symbol):
+    def get_stock_data(self, symbol, timeframe='day', start_date=datetime(datetime.now().year - 1, datetime.now().month, datetime.now().day), end_date=datetime(datetime.now().year, datetime.now().month, datetime.now().day)):
         """
-        Get the stock data for a given symbol from Alpaca API
+        Get the stock data from Alpaca API
         :param symbol: Stock symbol
-        Pull data from StockHistoricalDataClient and clean and rename the columns
-        so that it can be used for technical analysis
+        :param timeframe: Timeframe for the stock data, default is day
+        :param start_date: Start date for the stock data, default is 1 year ago
+        :param end_date: End date for the stock data, default is today
         return: DataFrame of stock data
         """
         # Create a StockHistoricalDataClient object
         client = StockHistoricalDataClient(api_key=alpaca_key_id, secret_key=alpaca_secret_key)
 
-        dt = datetime.now()
+        match timeframe:
+            case 'day':
+                timeframe = TimeFrame.Day
+            case 'minute':
+                timeframe = TimeFrame.Minute
+            case 'hour':
+                timeframe = TimeFrame.Hour
+            case 'week':
+                timeframe = TimeFrame.Week
+            case 'month':
+                timeframe = TimeFrame.Month
+            case _:
+                timeframe = TimeFrame.Day            
+
         # Create a StockBarsRequest object
         history_request = StockBarsRequest(
             symbol_or_symbols=symbol,                       # Single symbol
-            timeframe=TimeFrame.Day,                        # 1 day timeframe
-            start=datetime(dt.year - 1, dt.month, dt.day),  # 1 year ago
-            end=datetime(dt.year, dt.month, dt.day),        # Today
+            timeframe=timeframe,                        # 1 day timeframe
+            start=start_date,  # 1 year ago
+            end=end_date,      # Today
         )
 
         try:
@@ -172,64 +326,3 @@ class AlpacaAPI:
         except APIError as e:
             formatted_text = json.dumps(e, indent = 2)
             raise Exception(f"get_stock_data Error Getting Stock Data:\n {formatted_text}")
-    
-    ########################################################
-    # Market buy function
-    ########################################################
-    def market_buy(self, symbol, notional=None, qty=None):
-        """
-        Submit a market buy order to Alpaca API
-        :param symbol: Stock symbol
-        :param notional: Amount to buy in USD
-        :return: True if the order is successful
-        :return: False if the order is unsuccessful
-        """
-        # Create a TradingClient object
-        client = TradingClient(api_key=alpaca_key_id, secret_key=alpaca_secret_key, paper=alpaca_paper)
-        # Create a MarketOrderRequest object
-        order_data = MarketOrderRequest(
-                symbol=symbol,
-                notional=round(notional, 2) if notional else None,
-                qty=qty if qty else None,
-                side=OrderSide.BUY,
-                time_in_force=TimeInForce.DAY
-            )
-        # Try to submit the order
-        try: 
-            # Submit the order to the Alpaca API
-            client.submit_order(order_data)
-        # If there is an exception, print the exception
-        except APIError as e:
-            formatted_text = json.dumps(e, indent = 2)
-            raise Exception(f"market_buy Error Buying:\n {formatted_text}")
-    
-    ########################################################
-    # Market sell function
-    ########################################################
-    def market_sell(self, symbol, qty=None, notional=None):
-        """
-        Submit a market sell order to Alpaca API
-        :param symbol: Stock symbol
-        :param qty: Quantity to sell
-        :return: True if the order is successful
-        :return: False if the order is unsuccessful
-        """
-        # Create a TradingClient object
-        client = TradingClient(api_key=alpaca_key_id, secret_key=alpaca_secret_key, paper=alpaca_paper)
-        # Create a MarketOrderRequest object
-        order_data = MarketOrderRequest(
-                symbol=symbol,
-                qty=qty if qty else None,
-                notional=round(notional, 2) if notional else None,
-                side=OrderSide.SELL,
-                time_in_force=TimeInForce.DAY
-            )
-        # Try to submit the order
-        try: 
-            # Submit the order to the Alpaca API
-            client.submit_order(order_data)
-        # If there is an exception, print the exception
-        except APIError as e:
-            formatted_text = json.dumps(e, indent = 2)
-            raise Exception(f"market_sell Error Selling:\n {formatted_text}")
-    

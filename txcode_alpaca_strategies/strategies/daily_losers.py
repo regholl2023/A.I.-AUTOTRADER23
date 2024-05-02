@@ -183,7 +183,7 @@ class DailyLosers():
 
                 # Market sell the stock
                 try:
-                    self.alpaca.market_sell(symbol=row['asset'], notional=amount_to_sell)
+                    self.alpaca.market_order(symbol=row['asset'], notional=amount_to_sell, side='sell')
                 except Exception as e:
                     if production == False:
                         print(e)
@@ -240,7 +240,7 @@ class DailyLosers():
             qty = current_positions[current_positions['asset'] == symbol]['qty'].values[0]
             # Submit a market sell order
             try:
-                self.alpaca.market_sell(symbol=symbol, qty=qty)
+                self.alpaca.market_order(symbol=symbol, qty=qty, side='sell')
             except Exception as e:  
                 if production == False:
                     print(e)
@@ -281,7 +281,7 @@ class DailyLosers():
         for ticker in tickers:
             # Market buy the stock
             try:
-                self.alpaca.market_buy(symbol=ticker, notional=notional)
+                self.alpaca.market_order(symbol=ticker, notional=notional)
             except Exception as e:
                 if production == False:
                     print(e)
