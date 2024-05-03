@@ -36,9 +36,6 @@ class DailyLosers():
         self.article_extractor  = ArticleExtractor()
         self.openai             = OpenAiAPI()
 
-    def test(self, symbol):
-        self.alpaca.get_latest_news(symbol=symbol)
-
     ########################################################
     # Define the get_buy_opportunities function
     ########################################################
