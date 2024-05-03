@@ -2,6 +2,8 @@ import os
 import json
 import pandas as pd
 
+import requests
+
 from datetime import datetime
 
 from alpaca.common.exceptions import APIError
@@ -29,6 +31,18 @@ class AlpacaAPI:
     """
     def __init__(self):
         pass
+
+    def get_latest_news(self, symbol, limit=3):
+        url = "https://data.alpaca.markets/v1beta1/news?symbols={}".format(symbol)
+        headers = {
+            "Apca-Api-Key-Id": alpaca_key_id,
+            "Apca-Api-Secret-Key": alpaca_secret_key
+        }
+        response = requests.get(url, headers=headers)
+
+        response_json = json.loads(response.text)
+
+        print(json.dumps(response_json, indent=2))
 
     ########################################################
     # Define the submit_order function
